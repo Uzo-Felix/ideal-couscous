@@ -1,19 +1,27 @@
 const express = require('express');
 const axios = require('axios');
+const geoip = require('geoip-lite');
 require('dotenv').config();
 const cron = require('node-cron');
 
 const app = express();
 const port = process.env.PORT || 3000;
 
+
+// Middleware to get the client IP
+app.use((req, res, next) => {
+    req.clientIp = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+    next();
+});
+
 app.get('/api/hello', async (req, res) => {
     try {
         const visitorName = req.query.visitor_name || 'Guest';
+        const clientIp = req.clientIp;
         
-        // Get location from IP
-        const ipapiResponse = await axios.get('https://ipapi.co/json/');
-        const clientIp = ipapiResponse.data.ip;
-        const city = ipapiResponse.data.city || 'Unknown';
+         /// Get location from IP
+        const geo = geoip.lookup(clientIp);
+        const city = geo ? geo.city : 'Unknown';
         
         // Get weather data
         const weatherApiKey = process.env.WEATHER_API_KEY;
