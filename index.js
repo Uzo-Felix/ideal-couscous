@@ -1,9 +1,10 @@
 const express = require('express');
 const axios = require('axios');
 require('dotenv').config();
+const cron = require('node-cron');
 
 const app = express();
-const port = 3000;
+const port = process.env.PORT || 3000;
 
 app.get('/api/hello', async (req, res) => {
     try {
@@ -29,6 +30,22 @@ app.get('/api/hello', async (req, res) => {
     } catch (error) {
         console.error('Error:', error);
         res.status(500).json({ error: 'An error occurred while processing your request' });
+    }
+});
+
+// Add a new route for the ping
+app.get('/ping', (req, res) => {
+    console.log('Ping received at', new Date().toISOString());
+    res.send('Pong!');
+});
+
+// Set up the cron job to run every 4 minutes
+cron.schedule('*/4 * * * *', async () => {
+    try {
+        const response = await axios.get(`http://localhost:${port}/ping`);
+        console.log('Cron job executed:', response.data);
+    } catch (error) {
+        console.error('Error in cron job:', error.message);
     }
 });
 
